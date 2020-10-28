@@ -82,11 +82,13 @@ int main(int argc, char* argv[]){															//driver code
 	if(selection_route == "Single"){														//If asked the Single option 
 
 		string binary_String = argv[4];														//The variable for storing the binary string
+		if (binary_String.size() != T)
+			return
 		/*code for single*/
 	}
 	else if(selection_route == "All"){														//If asked for the All option
 		/*code for all*/
 	}
-
+ return 0;
 }
 
