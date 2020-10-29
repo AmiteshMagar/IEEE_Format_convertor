@@ -1,6 +1,7 @@
 #include<bits/stdc++.h>
 #include<sstream>
 #include<string>
+#include<fstream>
 
 using namespace std;
 
@@ -18,7 +19,7 @@ int IntegerFunc(string passed_string){
 	int degree = 1;
 	while(loopVar >= 0){														//loop for cycling through the mantissa bit string
 		int temp = 0;															//temporary integer storage
-		if (mantBitStr[i] == '1')
+		if (mantBitStr[loopVar] == '1')
 			temp = 1;
 		final_number = final_number + (degree * temp);							//final number key manipulation
 		degree = degree * 2;
@@ -62,10 +63,78 @@ float FloatingFunc(string passed_string, int T, int E){
 	}
 	float fin = Mantissa + fraction;											//addition of obtained results of integer and fractional part
 
+	if(Mantissa == 0 && fraction == 0)
+		return 0;
 	return (sign * fin);														//return final number
 }																				//Working FxP conversion function
 
+string FloatingPointFunc(string passed_string, int T, int E){
+	char signBit = passed_string[0];
+	string expoBitStr = passed_string.substr(1,E);
+	string mantBitStr = passed_string.substr(E+1);
 
+	stringstream parser;
+	string parsed;
+
+	int sign = 1;
+	if ( signBit == '1')
+		sign = -1;
+
+	int loopVar1 = expoBitStr.size() - 1;
+	int Exponent = 0;
+	int exp_degree = 1;
+	while( loopVar1 >= 0){
+		int temp = 0;
+		if (expoBitStr[loopVar1] == '1')
+			temp = 1;
+		Exponent = Exponent + (exp_degree * temp);
+		exp_degree = exp_degree * 2;
+		loopVar1--;
+	}
+
+	int loopVar2 = 0;
+	float Mantissa = 0.0;
+	float mant_degree = 0.5;
+	while(loopVar2 <= (mantBitStr.size() - 1)){
+		int temp = 0;
+		if(mantBitStr[loopVar2] == '1')
+			temp = 1;
+		Mantissa = Mantissa + (mant_degree * temp);
+		mant_degree = mant_degree/2;
+		loopVar2++;
+	}
+	if(Exponent == 0 && Mantissa == 0){
+		return "0";
+	}
+	else if(Exponent == 0 && Mantissa !=0){
+		Exponent = Exponent - (pow(2 , E-1) - 2);
+		Mantissa = Mantissa * sign * pow(2,Exponent);
+		parser << Mantissa;
+		parser >> parsed;
+		string DeNorm = "    Denormal number ";
+		parsed = DeNorm.append(parsed);
+		return parsed;
+	}
+	else if(Exponent == (pow(2,E) -1)){
+		if(Mantissa == 0.0 && sign == 1){
+			return "+infinity";
+		}
+		else if(Mantissa == 0.0 && sign == -1){
+			return "-infinity";
+		}
+		else{
+			return "NAN";
+		}
+	}
+	else if(Exponent != 0 && Exponent != (pow(2,E) -1)){
+		Exponent = Exponent - (pow(2, E-1) - 1);
+		Mantissa = (1.0 + Mantissa) * sign * pow(2,Exponent);
+		parser << Mantissa;
+		parser >> parsed;
+		return parsed;
+	}
+
+}
 
 int main(int argc, char* argv[]){												//driver code
 
@@ -77,17 +146,61 @@ int main(int argc, char* argv[]){												//driver code
 	int E = 0;
 	Expo >> E;																	//Variable to store the Exponent (E) parameter passed
 
-	string selection_route = argv[3];											//Variable for the third parameter passed
+	string selection_route = argv[3];
+
+	ofstream Output_File;
+	string FileName = "19122002_";
+	FileName.append(to_string(T));
+	FileName.append("_");
+	FileName.append(to_string(E));
+	FileName.append("_");
 
 	if(selection_route == "Single"){											//If asked the Single option
 
 		string binary_String = argv[4];											//The variable for storing the binary string
 		if (binary_String.size() != T)
-			return
-		/*code for single*/
+			return 0;
+
+		FileName.append("Single_");
+		FileName.append(binary_String);
+		FileName.append(".txt");
+
+		Output_File.open(FileName, ios::out| ios::trunc);
+		Output_File<<"combinations"<<setw(20)<<"integer"<<setw(20)\
+		<<"fixed point"<<setw(20)<<"FP\n";
+
+		Output_File << binary_String <<setw(20)\
+		<< IntegerFunc(binary_String) << setw(20)\
+		<< FloatingFunc(binary_String, T, E) << setw(20)\
+		<< FloatingPointFunc(binary_String, T, E)<<endl;
 	}
 	else if(selection_route == "All"){											//If asked for the All option
-		/*code for all*/
+
+		FileName.append("All.txt");
+		Output_File.open(FileName, ios::out | ios::trunc);
+		Output_File<<"combinations"<<setw(20)<<"integer"<<setw(20)\
+		<<"fixed point"<<setw(20)<<"FP\n";
+
+		string servantString(T, '0');
+		string masterString = "1";
+		masterString = masterString.append(servantString);
+		bitset<32> bset1(masterString);
+		bitset<32> bset2(0);
+		while(bset2 != bset1){
+
+			string binary_String = bset2.to_string().substr(32-T);
+
+			Output_File << binary_String <<setw(20)\
+			<< IntegerFunc(binary_String) << setw(20)\
+			<< FloatingFunc(binary_String, T, E) << setw(20)\
+			<< FloatingPointFunc(binary_String, T, E);
+
+			bset2 = bitset<32>(bset2.to_ulong() + 1ULL);
+			if(bset2 != bset1)
+				Output_File << endl;
+		}
 	}
- return 0;
+	Output_File.close();
+	cout << "Done!"<<endl;
+	return 0;
 }
